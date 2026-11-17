@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Taylor Nilsen Portfolio</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* The portfolio PDF drawn page by page with PDF.js, re-rendered at the screen's real pixel density so text and drawings stay vector-sharp. */
+:root{--ground:#ECECEC;--sheet:#FFFFFF;--ink:#111111;--muted:#555555;--rule:#111111;--sans:'Lato','Carlito','Calibri',system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ground:#1C1C1C;--sheet:#FFFFFF;--ink:#EEEEEE;--muted:#AAAAAA;--rule:#EEEEEE;color-scheme:dark}}
+:root[data-theme="dark"]{--ground:#1C1C1C;--sheet:#FFFFFF;--ink:#EEEEEE;--muted:#AAAAAA;--rule:#EEEEEE;color-scheme:dark}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-block:32px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 24px;border-bottom:1.5px solid var(--rule);padding-bottom:8px}
+h1{margin:0;font-size:24px;font-weight:700}
+.meta{font-size:14px;font-style:italic;color:var(--muted)}
+figure{margin:0;display:flex;flex-direction:column;gap:6px}
+.sheet{position:relative;width:100%;aspect-ratio:11/8.5;background:var(--sheet);box-shadow:0 1px 2px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.08);overflow:hidden}
+.sheet canvas{position:absolute;inset:0;width:100%;height:100%}
+.sheet a{position:absolute;display:block}
+.sheet a:hover{background:rgba(0,0,0,.06)}
+.sheet video{position:absolute;object-fit:cover;background:#000;z-index:2}
+.sheet .vclose{position:absolute;z-index:3;min-width:32px;min-height:32px;font:700 15px var(--sans);color:#fff;background:rgba(0,0,0,.6);border:0;border-radius:16px;cursor:pointer}
+.sheet .vclose:focus-visible{outline:3px solid #fff}
+.sheet a.vid{cursor:pointer}
+.sheet a.vid:hover{background:rgba(255,255,255,.12);outline:2px solid #fff}
+</style></head><body>
+<div class="wrap">
+  <header>
+    <h1>Taylor Nilsen</h1>
+    <span class="meta">Engineering Portfolio, US Letter landscape</span>
+  </header>
+  <div id="pages"></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+{
+// Video figures in the PDF link to media.taylornilsen.com/portfolio/<name>.mp4; this page is served from that same site, so it
+// plays them in place over their picture. #video-<name> in the URL scrolls to that video and starts it.
+let current = null;
+function stop() { if (!current) return; current.v.pause(); current.v.remove(); current.x.remove(); current.el.style.visibility = ''; current = null; }
+async function play(url, el, muted) {
+  stop();
+  const sh = el.parentElement, v = document.createElement('video'), x = document.createElement('button');
+  for (const k of ['left', 'top', 'width', 'height']) v.style[k] = el.style[k];
+  v.controls = true; v.playsInline = true; v.muted = !!muted; v.src = url;
+  x.className = 'vclose'; x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'Close video');
+  x.style.left = 'calc(' + el.style.left + ' + ' + el.style.width + ' - 38px)'; x.style.top = 'calc(' + el.style.top + ' + 6px)';
+  x.onclick = stop; v.onended = stop;
+  el.style.visibility = 'hidden'; sh.append(v, x); current = { v, x, el };
+  try { await v.play(); } catch (e) { v.muted = true; try { await v.play(); } catch (e2) {} }   // from a link: may start muted
+}
+addEventListener('keydown', (e) => { if (e.key === 'Escape') stop(); });
+const vidLinks = new Map();                                    // video name -> its link box, once its page is drawn
+const TITLES = [];                                          // page titles, read from the PDF's own bookmarks below
+const host = document.getElementById('pages');
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+(async () => {
+  let pdf;
+  try { pdf = await pdfjsLib.getDocument('portfolio.pdf').promise; }
+  catch (e) { host.innerHTML = '<p class="err">The pages could not load here.</p>'; return; }
+  host.style.cssText = 'display:flex;flex-direction:column;gap:28px';
+  TITLES[0] = 'Cover';                                       // bookmarks: one per entry divider, one per page under it
+  async function walk(items) {
+    for (const it of items || []) {
+      await walk(it.items);                                  // pages first, so a sub-part bookmark doesn't take its first page's title
+      try { let d = it.dest; if (typeof d === 'string') d = await pdf.getDestination(d);
+        if (Array.isArray(d)) { const i = await pdf.getPageIndex(d[0]); if (!TITLES[i]) TITLES[i] = it.title; } } catch (e) {}
+    }
+  }
+  try { await walk(await pdf.getOutline()); } catch (e) {}
+  const sheets = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const fig = document.createElement('figure'), sh = document.createElement('div'), cap = document.createElement('figcaption');
+    sh.className = 'sheet'; sh.id = 'page-' + i; sh.setAttribute('role', 'img'); sh.setAttribute('aria-label', 'Page ' + i + ': ' + (TITLES[i - 1] || ''));
+    cap.textContent = 'Page ' + i + '. ' + (TITLES[i - 1] || '');
+    fig.append(sh, cap); host.append(fig); sheets.push(sh);
+  }
+  const drawn = new Map();                                   // page number -> pixel width it was drawn at
+  async function draw(i) {
+    const sh = sheets[i - 1], px = Math.round(sh.clientWidth * (window.devicePixelRatio || 1));
+    if (!px || drawn.get(i) === px) return; drawn.set(i, px);
+    const page = await pdf.getPage(i), base = page.getViewport({ scale: 1 }), vp = page.getViewport({ scale: px / base.width });
+    const cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
+    await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+    sh.querySelector('canvas')?.remove(); sh.prepend(cv);
+    if (!sh.dataset.links) {                                 // links (cover contents, header name, videos) as clickable boxes
+      sh.dataset.links = 1;
+      for (const a of await page.getAnnotations()) {
+        if (a.subtype !== 'Link') continue;
+        let target = null;
+        try {
+          let d = a.dest; if (typeof d === 'string') d = await pdf.getDestination(d);
+          if (Array.isArray(d)) target = (await pdf.getPageIndex(d[0])) + 1;
+        } catch (e) {}
+        const [x1, y1, x2, y2] = base.convertToViewportRectangle(a.rect), el = document.createElement('a');
+        Object.assign(el.style, { left: Math.min(x1, x2) / base.width * 100 + '%', top: Math.min(y1, y2) / base.height * 100 + '%',
+          width: Math.abs(x2 - x1) / base.width * 100 + '%', height: Math.abs(y2 - y1) / base.height * 100 + '%' });
+        const vm = a.url && a.url.match(/\/portfolio\/([a-z0-9-]+)\.mp4$/);
+        if (vm) { const url = new URL(a.url).pathname; el.href = a.url; el.className = 'vid'; el.setAttribute('aria-label', 'Play video');
+          el.onclick = (ev) => { ev.preventDefault(); play(url, el); }; vidLinks.set(vm[1], el); sh.append(el); continue; }
+        if (target) { el.href = '#page-' + target; el.onclick = (ev) => { ev.preventDefault(); sheets[target - 1].scrollIntoView({ behavior: 'smooth' }); }; }
+        else if (a.url) { el.href = a.url; el.target = '_blank'; el.rel = 'noopener'; } else continue;
+        sh.append(el);
+      }
+    }
+  }
+  const seen = new Set();
+  const io = new IntersectionObserver((es) => es.forEach((e) => { const i = sheets.indexOf(e.target) + 1; e.isIntersecting ? (seen.add(i), draw(i)) : seen.delete(i); }), { rootMargin: '600px 0px' });
+  sheets.forEach((s) => io.observe(s));
+  let t; addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => seen.forEach(draw), 200); });
+  async function fromHash() {
+    const h = location.hash.slice(1); if (!h.startsWith('video-')) return;
+    const name = h.slice(6);
+    for (let i = 1; i <= pdf.numPages && !vidLinks.has(name); i++) {
+      const anns = await (await pdf.getPage(i)).getAnnotations();
+      if (anns.some((a) => a.url && a.url.endsWith('/portfolio/' + name + '.mp4'))) { sheets[i - 1].scrollIntoView(); await draw(i); }
+    }
+    const el = vidLinks.get(name); if (el) play('/portfolio/' + name + '.mp4', el, false);
+  }
+  addEventListener('hashchange', fromHash); fromHash();
+
+})();
+}
+</script>
+</body></html>
