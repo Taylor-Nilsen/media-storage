@@ -1,0 +1,29 @@
+---
+---
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taylor Nilsen Media</title>
+<style>
+  body { font: 16px/1.5 system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 24px 16px; background: #fff; color: #111; }
+  @media (prefers-color-scheme: dark) { body { background: #111; color: #eee; } a { color: #8ab4f8; } }
+  .item { margin: 24px 0; }
+  video, img { display: block; max-width: 100%; max-height: 360px; margin-top: 8px; }
+  code { word-break: break-all; }
+</style>
+</head>
+<body>
+<h1>Taylor Nilsen Media</h1>
+{% assign files = site.static_files | sort: "path" %}
+{% for f in files %}{% unless f.name == "CNAME" or f.name == "README.md" %}
+{% assign ext = f.extname | downcase %}
+<div class="item">
+  <a href="{{ f.path }}"><code>https://media.taylornilsen.com{{ f.path }}</code></a>
+  {% if ext == ".mp4" or ext == ".webm" or ext == ".mov" %}<video src="{{ f.path }}" controls preload="metadata"></video>
+  {% elsif ext == ".png" or ext == ".jpg" or ext == ".jpeg" or ext == ".gif" or ext == ".webp" or ext == ".svg" %}<img src="{{ f.path }}" loading="lazy" alt="{{ f.name }}">{% endif %}
+</div>
+{% endunless %}{% endfor %}
+</body>
+</html>
