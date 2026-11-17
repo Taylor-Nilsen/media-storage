@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Taylor Nilsen Portfolio</title>
+<title>Taylor Nilsen Engineering Portfolio</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400&display=swap">
 <style>
 /* The portfolio PDF drawn page by page with PDF.js, re-rendered at the screen's real pixel density so text and drawings stay vector-sharp. */
@@ -8,7 +8,7 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ground:#1C1C1C;--sheet:#FFFFFF;--ink:#EEEEEE;--muted:#AAAAAA;--rule:#EEEEEE;color-scheme:dark}}
 :root[data-theme="dark"]{--ground:#1C1C1C;--sheet:#FFFFFF;--ink:#EEEEEE;--muted:#AAAAAA;--rule:#EEEEEE;color-scheme:dark}
 body{background:var(--ground);color:var(--ink);font-family:var(--sans);margin:0}
-.wrap{max-width:1180px;margin:0 auto;padding-block:32px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
+.wrap{max-width:1180px;margin:0 auto;padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
 header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 24px;border-bottom:1.5px solid var(--rule);padding-bottom:8px}
 h1{margin:0;font-size:24px;font-weight:700}
 .meta{font-size:14px;font-style:italic;color:var(--muted)}
@@ -24,17 +24,13 @@ figure{margin:0;display:flex;flex-direction:column;gap:6px}
 .sheet a.vid:hover{background:rgba(255,255,255,.12);outline:2px solid #fff}
 </style></head><body>
 <div class="wrap">
-  <header>
-    <h1>Taylor Nilsen</h1>
-    <span class="meta">Engineering Portfolio, US Letter landscape</span>
-  </header>
   <div id="pages"></div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
 {
-// Video figures in the PDF link to media.taylornilsen.com/portfolio/<name>.mp4; this page is served from that same site, so it
-// plays them in place over their picture. #video-<name> in the URL scrolls to that video and starts it.
+// A plain PDF viewer that plays the portfolio's videos in place. Video figures in the PDF link here as #video-<name>: a click
+// plays portfolio/<name>.mp4 over its picture, and opening the page with that hash scrolls to the video and starts it.
 let current = null;
 function stop() { if (!current) return; current.v.pause(); current.v.remove(); current.x.remove(); current.el.style.visibility = ''; current = null; }
 async function play(url, el, muted) {
@@ -55,9 +51,9 @@ const host = document.getElementById('pages');
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 (async () => {
   let pdf;
-  try { pdf = await pdfjsLib.getDocument('portfolio.pdf?v=2026-11-17')   /* bump on every PDF update, so a cached copy is never served */.promise; }
+  try { pdf = await pdfjsLib.getDocument('portfolio.pdf?v=2026-11-17b')   /* bump on every PDF update, so a cached copy is never served */.promise; }
   catch (e) { host.innerHTML = '<p class="err">The pages could not load here.</p>'; return; }
-  host.style.cssText = 'display:flex;flex-direction:column;gap:28px';
+  host.style.cssText = 'display:flex;flex-direction:column;gap:16px';
   TITLES[0] = 'Cover';                                       // bookmarks: one per entry divider, one per page under it
   async function walk(items) {
     for (const it of items || []) {
@@ -71,8 +67,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
   for (let i = 1; i <= pdf.numPages; i++) {
     const fig = document.createElement('figure'), sh = document.createElement('div'), cap = document.createElement('figcaption');
     sh.className = 'sheet'; sh.id = 'page-' + i; sh.setAttribute('role', 'img'); sh.setAttribute('aria-label', 'Page ' + i + ': ' + (TITLES[i - 1] || ''));
-    cap.textContent = 'Page ' + i + '. ' + (TITLES[i - 1] || '');
-    fig.append(sh, cap); host.append(fig); sheets.push(sh);
+    fig.append(sh); host.append(fig); sheets.push(sh);
   }
   const drawn = new Map();                                   // page number -> pixel width it was drawn at
   async function draw(i) {
@@ -94,8 +89,8 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
         const [x1, y1, x2, y2] = base.convertToViewportRectangle(a.rect), el = document.createElement('a');
         Object.assign(el.style, { left: Math.min(x1, x2) / base.width * 100 + '%', top: Math.min(y1, y2) / base.height * 100 + '%',
           width: Math.abs(x2 - x1) / base.width * 100 + '%', height: Math.abs(y2 - y1) / base.height * 100 + '%' });
-        const vm = a.url && a.url.match(/\/portfolio\/([a-z0-9-]+)\.mp4$/);
-        if (vm) { const url = new URL(a.url).pathname; el.href = a.url; el.className = 'vid'; el.setAttribute('aria-label', 'Play video');
+        const vm = a.url && a.url.match(/#video-([a-z0-9-]+)$/);
+        if (vm) { const url = vm[1] + '.mp4'; el.href = a.url; el.className = 'vid'; el.setAttribute('aria-label', 'Play video');
           el.onclick = (ev) => { ev.preventDefault(); play(url, el); }; vidLinks.set(vm[1], el); sh.append(el); continue; }
         if (target) { el.href = '#page-' + target; el.onclick = (ev) => { ev.preventDefault(); sheets[target - 1].scrollIntoView({ behavior: 'smooth' }); }; }
         else if (a.url) { el.href = a.url; el.target = '_blank'; el.rel = 'noopener'; } else continue;
@@ -112,9 +107,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
     const name = h.slice(6);
     for (let i = 1; i <= pdf.numPages && !vidLinks.has(name); i++) {
       const anns = await (await pdf.getPage(i)).getAnnotations();
-      if (anns.some((a) => a.url && a.url.endsWith('/portfolio/' + name + '.mp4'))) { sheets[i - 1].scrollIntoView(); await draw(i); }
+      if (anns.some((a) => a.url && a.url.endsWith('#video-' + name))) { sheets[i - 1].scrollIntoView(); await draw(i); }
     }
-    const el = vidLinks.get(name); if (el) play('/portfolio/' + name + '.mp4', el, false);
+    const el = vidLinks.get(name); if (el) play(name + '.mp4', el, false);
   }
   addEventListener('hashchange', fromHash); fromHash();
 
