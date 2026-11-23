@@ -51,7 +51,7 @@ const host = document.getElementById('pages');
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 (async () => {
   let pdf;
-  try { pdf = await pdfjsLib.getDocument('portfolio.pdf?v=2026-11-23e')   /* bump on every PDF update, so a cached copy is never served */.promise; }
+  try { pdf = await pdfjsLib.getDocument('portfolio.pdf?v=2026-11-23f')   /* bump on every PDF update, so a cached copy is never served */.promise; }
   catch (e) { host.innerHTML = '<p class="err">The pages could not load here.</p>'; return; }
   host.style.cssText = 'display:flex;flex-direction:column;gap:16px';
   TITLES[0] = 'Cover';                                       // bookmarks: one per entry divider, one per page under it
